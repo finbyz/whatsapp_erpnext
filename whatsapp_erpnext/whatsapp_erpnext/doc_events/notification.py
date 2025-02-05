@@ -301,6 +301,15 @@ def save_whatsapp_log(self, data, message_id, label=None):
     complete_message = replace_placeholders(self.message, all_message_parts)
     # format_message function end 
 
+    notification = None
+    try:
+        if self.doctype == "Notification":
+            notification = self.name
+        elif self.doctype == "WhatsApp Message":
+            notification = frappe.get_value("WhatsApp Message", self.name, 'notification')
+    except Exception:
+        pass
+
     # Save the WhatsApp message document
     whatsapp_message = frappe.get_doc({
         "doctype": "WhatsApp Message",
@@ -320,7 +329,7 @@ def save_whatsapp_log(self, data, message_id, label=None):
         "document_name": data.get("document_name"),
         "doctype_link_name": data.get("doctype_link_name"),
         "error_field": data.get("error_field"),
-        "notification": self.name,
+        "notification": notification,
     })
     whatsapp_message.save(ignore_permissions=True)
 
