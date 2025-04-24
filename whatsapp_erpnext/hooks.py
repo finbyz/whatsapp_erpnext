@@ -155,14 +155,10 @@ doc_events = {
 
 scheduler_events = {
     "all": [
-        "whatsapp_erpnext.schedule.schedule_comments2",
+        "whatsapp_erpnext.schedule.schedule_whatsapp_comments",
         "whatsapp_erpnext.schedule.bg_message_contact_generation",
+        "whatsapp_erpnext.schedule.retry_failed_whatsapp_messages",
     ],
-    "cron": {
-        "0 * * * *":[
-            "whatsapp_erpnext.schedule.retry_failed_whatsapp_messages"
-        ]
-    }
 }
 
 # Testing

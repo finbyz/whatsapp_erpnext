@@ -3,7 +3,7 @@ import frappe
 from frappe.integrations.utils import make_post_request
 from frappe.utils.background_jobs import enqueue
 from whatsapp_erpnext.whatsapp_erpnext.doc_events.notification import save_whatsapp_log
-def schedule_comments2():
+def schedule_whatsapp_comments():
     message = frappe.db.get_list(
         "WhatsApp Message",
         {
