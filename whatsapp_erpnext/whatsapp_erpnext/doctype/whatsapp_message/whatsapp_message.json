@@ -20,6 +20,7 @@
   "notification",
   "rejection_remarks",
   "retry_count",
+  "contact_not_found",
   "column_break_5",
   "link_to",
   "link_name",
@@ -215,11 +216,18 @@
    "fieldtype": "Int",
    "hidden": 1,
    "label": "Retry Count"
+  },
+  {
+   "default": "0",
+   "fieldname": "contact_not_found",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Contact Not Found"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2024-10-07 17:46:02.213002",
+ "modified": "2025-04-24 14:49:35.467827",
  "modified_by": "Administrator",
  "module": "WhatsApp ERPNext",
  "name": "WhatsApp Message",

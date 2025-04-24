@@ -70,12 +70,16 @@ def generate_html_message(doctype_link_name, document_name, message):
 def bg_message_contact_generation():
     message = frappe.db.get_list(
         "WhatsApp Message",
+        filters={
+            "contact_not_found": 0  # Only include unchecked
+        },
         or_filters=[
             {"link_to": ('is', 'not set')},
             {"link_name": ('is', 'not set')},
             {"contact": ('is', 'not set')}
         ],
         fields=["name", "to", "from"],
+        limit=50
     )
     for msg in message:
         contact = msg.get("to") if msg.get("to") else msg.get("from")
@@ -105,10 +109,13 @@ def bg_message_contact_generation():
                         LIMIT 1;
                     """
         contact_details = frappe.db.sql(contact_query, as_dict=True)
+        whatsapp_message = frappe.get_doc("WhatsApp Message", msg.get("name"))
         if not contact_details:
+            whatsapp_message.contact_not_found = 1
+            whatsapp_message.save(ignore_permissions=True)
             continue
         # print(contact_details)
-        whatsapp_message = frappe.get_doc("WhatsApp Message", msg.get("name"))
+        
         whatsapp_message.link_to = contact_details[0].get("link_doctype", "")
         whatsapp_message.link_name = contact_details[0].get("link_name", "")
         whatsapp_message.contact = contact_details[0].get("name", "")
