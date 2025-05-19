@@ -198,4 +198,22 @@
 
 ::-webkit-scrollbar-thumb:hover {
     background: #999999;
+}
+
+.tick {
+    font-size: 14px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+.tick.single { color: #888; }
+.tick.double { color: #888; }
+.tick.blue { color: #34b7f1; }
+.tick.failed { color: #e53935; }
+.chat-image {
+    border-radius: 8px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    display: block;
+    max-width: 200px;
+    max-height: 200px;
 } 

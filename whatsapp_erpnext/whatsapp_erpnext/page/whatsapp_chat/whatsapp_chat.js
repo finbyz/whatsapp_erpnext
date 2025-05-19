@@ -71,22 +71,23 @@ function loadChats() {
 				const chats = response.message;
 				const chatList = $('#chat-list');
 				chatList.empty();
-				
 				chats.forEach(chat => {
+					const unreadBadge = chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : '';
+					const chatName = chat.party ? `${chat.party_type || ''}: ${chat.party}` : chat.contact;
 					const chatElement = $(`
-						<div class="chat-item" data-chat-id="${chat.contact}">
+						<div class="chat-item" data-chat-id="${chat.contact}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
 							<img src="/assets/whatsapp_erpnext/images/default-avatar.png" alt="Contact" class="avatar">
 							<div class="chat-info">
-								<h4>${chat.contact}</h4>
+								<h4>${chatName}</h4>
 								<p>${chat.last_message || 'No messages'}</p>
+								${unreadBadge}
 							</div>
 						</div>
 					`);
-					
 					chatElement.on('click', () => {
 						$('.chat-item').removeClass('active');
 						chatElement.addClass('active');
-						loadChat(chat.contact);
+						loadChat(chat.contact, chat.party_type, chat.party);
 					});
 					chatList.append(chatElement);
 				});
@@ -95,23 +96,40 @@ function loadChats() {
 	});
 }
 
-function loadChat(contact) {
+function loadChat(contact, party_type, party) {
 	frappe.call({
 		method: 'whatsapp_erpnext.whatsapp_erpnext.doctype.whatsapp_message.whatsapp_message.get_messages',
 		args: {
-			contact: contact
+			contact: contact,
+			party_type: party_type,
+			party: party
 		},
 		callback: function(response) {
 			if (response.message) {
 				const messages = response.message;
 				const chatMessages = $('#chat-messages');
 				chatMessages.empty();
-				
 				messages.forEach(message => {
+					let tick = '';
+					if (message.direction === 'sent') {
+						if (message.status === 'Read') {
+							tick = '<span class="tick blue">&#10003;&#10003;</span>';
+						} else if (message.status === 'Delivered') {
+							tick = '<span class="tick double">&#10003;&#10003;</span>';
+						} else if (message.status === 'Success') {
+							tick = '<span class="tick single">&#10003;</span>';
+						} else if (message.status === 'Failed') {
+							tick = '<span class="tick failed">&#10007;</span>';
+						}
+					}
+					let contentHtml = message.content;
+					if (/\.(jpg|jpeg|png|gif)$/i.test(contentHtml)) {
+						contentHtml = `<img src="${contentHtml}" class="chat-image" />`;
+					}
 					const messageElement = $(`
 						<div class="message ${message.direction}">
 							<div class="message-content">
-								${message.content}
+								${contentHtml} ${tick}
 							</div>
 							<div class="message-time">
 								${frappe.datetime.str_to_user(message.creation)}
@@ -120,12 +138,9 @@ function loadChat(contact) {
 					`);
 					chatMessages.append(messageElement);
 				});
-				
-				// Scroll to bottom
 				chatMessages.scrollTop(chatMessages[0].scrollHeight);
-				
-				// Update current chat name
-				$('#current-chat-name').text(messages[0]?.contact_name || 'Chat');
+				const chatName = messages[0]?.party ? `${messages[0].party_type || ''}: ${messages[0].party}` : messages[0]?.contact_name || 'Chat';
+				$('#current-chat-name').text(chatName);
 			}
 		}
 	});
@@ -134,25 +149,27 @@ function loadChat(contact) {
 function sendMessage() {
 	const messageInput = $('#message-input');
 	const content = messageInput.val().trim();
-	
 	if (!content) return;
-	
-	const currentChatId = $('.chat-item.active').data('chat-id');
-	if (!currentChatId) {
+	const activeChat = $('.chat-item.active');
+	const currentContact = activeChat.data('chat-id');
+	const partyType = activeChat.data('party-type');
+	const party = activeChat.data('party');
+	if (!currentContact) {
 		frappe.msgprint('Please select a chat first');
 		return;
 	}
-	
 	frappe.call({
 		method: 'whatsapp_erpnext.whatsapp_erpnext.doctype.whatsapp_message.whatsapp_message.send_message',
 		args: {
-			contact: currentChatId,
-			content: content
+			contact: currentContact,
+			content: content,
+			party_type: partyType,
+			party: party
 		},
 		callback: function(response) {
 			if (response.message) {
 				messageInput.val('');
-				loadChat(currentChatId);
+				loadChat(currentContact, partyType, party);
 			}
 		}
 	});
