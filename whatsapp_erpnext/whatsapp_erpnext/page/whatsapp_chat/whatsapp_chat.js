@@ -73,9 +73,9 @@ function loadChats() {
 				chatList.empty();
 				chats.forEach(chat => {
 					const unreadBadge = chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : '';
-					const chatName = chat.party ? `${chat.party_type || ''}: ${chat.party}` : chat.contact;
+					const chatName = chat.contact_display || (chat.party ? `${chat.party_type || ''}: ${chat.party}` : chat.contact);
 					const chatElement = $(`
-						<div class="chat-item" data-chat-id="${chat.contact}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
+						<div class="chat-item" data-from="${chat.from}" data-to="${chat.to}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
 							<img src="/assets/whatsapp_erpnext/images/default-avatar.png" alt="Contact" class="avatar">
 							<div class="chat-info">
 								<h4>${chatName}</h4>
@@ -87,7 +87,7 @@ function loadChats() {
 					chatElement.on('click', () => {
 						$('.chat-item').removeClass('active');
 						chatElement.addClass('active');
-						loadChat(chat.contact, chat.party_type, chat.party);
+						loadChat(chat.from, chat.to, chat.party_type, chat.party);
 					});
 					chatList.append(chatElement);
 				});
@@ -96,11 +96,12 @@ function loadChats() {
 	});
 }
 
-function loadChat(contact, party_type, party) {
+function loadChat(from, to, party_type, party) {
 	frappe.call({
 		method: 'whatsapp_erpnext.whatsapp_erpnext.doctype.whatsapp_message.whatsapp_message.get_messages',
 		args: {
-			contact: contact,
+			from_number: from,
+			to_number: to,
 			party_type: party_type,
 			party: party
 		},
@@ -139,7 +140,7 @@ function loadChat(contact, party_type, party) {
 					chatMessages.append(messageElement);
 				});
 				chatMessages.scrollTop(chatMessages[0].scrollHeight);
-				const chatName = messages[0]?.party ? `${messages[0].party_type || ''}: ${messages[0].party}` : messages[0]?.contact_name || 'Chat';
+				const chatName = messages[0]?.contact_display || (messages[0]?.party ? `${messages[0].party_type || ''}: ${messages[0].party}` : messages[0]?.contact_name || 'Chat');
 				$('#current-chat-name').text(chatName);
 			}
 		}
