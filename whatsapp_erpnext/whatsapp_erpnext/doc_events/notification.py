@@ -164,33 +164,82 @@ def send_template_message(self, doc: Document, contact_no=None):
 						}]
 
                     label = None
+                    # if self.attach_print:
+                    #     key = doc.get_document_share_key()
+                    #     frappe.db.commit()
+
+                    #     link = get_pdf_link(
+                    #         doc_data["doctype"],
+                    #         doc_data["name"],
+                    #         print_format=self.print_format or "Standard",
+                    #     )
+
+                    #     filename = f'{doc_data["name"]}.pdf'
+                    #     url = f"{frappe.utils.get_url()}{link}&key={key}"
+
+                    #     data["template"]["components"].append(
+                    #         {
+                    #             "type": "header",
+                    #             "parameters": [
+                    #                 {
+                    #                     "type": "document",
+                    #                     "document": {"link": url, "filename": filename},
+                    #                 }
+                    #             ],
+                    #         }
+                    #     )
+                    #     label = f"{doc_data['doctype']} - {doc_data['name']}"
                     if self.attach_print:
                         key = doc.get_document_share_key()
                         frappe.db.commit()
 
-                        link = get_pdf_link(
+                        # Generate PDF content
+                        pdf_file = frappe.get_print(
                             doc_data["doctype"],
                             doc_data["name"],
                             print_format=self.print_format or "Standard",
+                            as_pdf=True
                         )
 
+                        # File details
                         filename = f'{doc_data["name"]}.pdf'
-                        url = f"{frappe.utils.get_url()}{link}&key={key}"
 
+                        file_doc = frappe.get_doc({
+                            "doctype": "File",
+                            "file_name": filename,
+                            "attached_to_doctype": doc_data["doctype"],
+                            "attached_to_name": doc_data["name"],
+                            "is_private": 0,  # make public
+                            "folder": "Home",  # Save directly in root folder
+                            "content": pdf_file,
+                            "decode": False
+                        })
+
+                        file_doc.insert(ignore_permissions=True)
+                        frappe.db.commit()
+
+                        # Get public URL
+                        url = file_doc.file_url
+                        full_url = frappe.utils.get_url(url)
+
+                        # Append to your template data
                         data["template"]["components"].append(
                             {
                                 "type": "header",
                                 "parameters": [
                                     {
                                         "type": "document",
-                                        "document": {"link": url, "filename": filename},
+                                        "document": {"link": full_url, "filename": filename},
                                     }
                                 ],
                             }
                         )
+
                         label = f"{doc_data['doctype']} - {doc_data['name']}"
 
                     notify(self, data, label)
+                    if file_doc:
+                        frappe.delete_doc("File", file_doc.name, ignore_permissions=True)
 
 def notify(self, data, label=None):
     """Notify."""
