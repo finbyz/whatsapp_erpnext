@@ -5,7 +5,8 @@ from frappe.utils.safe_exec import get_safe_globals, safe_exec
 from frappe.integrations.utils import make_post_request
 from frappe.desk.form.utils import get_pdf_link
 from frappe.utils.background_jobs import enqueue
-
+from datetime import datetime
+from frappe.utils import now_datetime
 
 def validate(self, method):
     if self.channel == "WhatsApp":
@@ -155,13 +156,49 @@ def send_template_message(self, doc: Document, contact_no=None):
                         parameters = []
                         for field in self.fields:
                             parameters.append({
-								"type": "text",
-								"text": doc.get_formatted(field.field_name)
-							})
+                                "type": "text",
+                                "text": doc.get_formatted(field.field_name)
+                            })
+
                         data['template']["components"] = [{
-							"type": "body",
-							"parameters": parameters
-						}]
+                            "type": "body",
+                            "parameters": parameters
+                        }]
+
+                        if template.buttons:
+                            buttons = frappe.parse_json(template.buttons)
+
+                            for idx, btn in enumerate(buttons):
+                                button_component = {
+                                    "type": "button",
+                                    "index": str(idx),
+                                }
+                                if btn['type'] == 'URL':
+                                    button_component["sub_type"] = "url"
+                                    button_component["parameters"] = [
+                                        {
+                                            "type": "text",
+                                            "text": doc.get(self.fields[idx].field_name)  # actual value from doc
+                                        }
+                                    ]
+
+                                elif btn['type'] == 'QUICK_REPLY':
+                                    button_component["sub_type"] = "quick_reply"
+                                    # Quick reply buttons generally don’t need dynamic parameters,
+                                    # they just use the template text itself.
+                                    # But if you want dynamic, you can still inject:
+                                    if self.fields and idx < len(self.fields):
+                                        button_component["parameters"] = [
+                                            {
+                                                "type": "payload",
+                                                "payload": doc.get(self.fields[idx].field_name)
+                                            }
+                                        ]
+                                else:
+                                    button_component["sub_type"] = btn['type'].lower()
+                                data['template']["components"].append(button_component)
+
+
 
                     label = None
                     # if self.attach_print:
@@ -189,6 +226,7 @@ def send_template_message(self, doc: Document, contact_no=None):
                     #         }
                     #     )
                     #     label = f"{doc_data['doctype']} - {doc_data['name']}"
+                    file_doc = None
                     if self.attach_print:
                         key = doc.get_document_share_key()
                         frappe.db.commit()
@@ -203,7 +241,10 @@ def send_template_message(self, doc: Document, contact_no=None):
 
                         # File details
                         filename = f'{doc_data["name"]}.pdf'
-
+                        now = datetime.now()
+                        formatted_datetime = now.strftime("%Y-%m-%d_%H-%M-%S")
+                        # File details
+                        filename = f'{doc_data["name"]}-{formatted_datetime}-{doc_data["customer_name"]}.pdf'
                         file_doc = frappe.get_doc({
                             "doctype": "File",
                             "file_name": filename,
@@ -251,12 +292,13 @@ def notify(self, data, label=None):
 
     headers = {"authorization": f"Bearer {token}", "content-type": "application/json"}
     # try:
+    frappe.log_error(f"data response", json.dumps(data))
     response = make_post_request(
         f"{settings.url}/{settings.version}/{settings.phone_id}/messages",
         headers=headers,
         data=json.dumps(data),
     )
-
+    
     # error_log = frappe.log_error(message=str(response), title="WhatsApp Message Response")
     data["error_field"] = str(response)  # Save the message in the error_field
 
@@ -418,7 +460,7 @@ def retry_message(whatsapp_msg_id):
 def prepare_retry_data(whatsapp_msg):
     if not whatsapp_msg.mesaage_data:
         frappe.throw("Message data not found in WhatsApp message")
-    error_field = json.loads(whatsapp_msg.error_field.replace("'", '"'))
+    error_field = json.loads(whatsapp_msg.error_field.replace("'", '"')) # error
     statuses = error_field.get("statuses", [])
     for status in statuses:
         if status.get("status") == "failed":

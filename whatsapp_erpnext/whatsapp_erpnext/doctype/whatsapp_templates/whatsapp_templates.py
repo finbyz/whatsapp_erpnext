@@ -208,7 +208,11 @@ def fetch():
 					doc.template = component['text']
 					if component.get('example'):
 						doc.sample_values = ','.join(component['example']['body_text'][0])
-
+				elif component['type'] == 'BUTTONS':
+					doc.buttons = component['text']
+					if component.get('example'):
+						doc.sample_values = ','.join(component['example']['body_text'][0])
+				
 			# if document exists update else insert
 			# used db_update and db_insert to ignore hooks
 			if flags:
