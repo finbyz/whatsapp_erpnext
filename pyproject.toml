@@ -1,14 +1,13 @@
 [project]
 name = "whatsapp_erpnext"
 authors = [
-    { name = "Finbyz Tech Pvt Ltd", email = "info@finbyz.com"}
+    { name = "Finbyz Tech Pvt Ltd", email = "info@finbyz.com" }
 ]
-description = ""WhatsApp integration with ERPNext"
-requires-python = ">=3.14"
+description = "WhatsApp integration with ERPNext"
+requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
-dependencies = [
-]
+dependencies = []
 
 [build-system]
 requires = ["flit_core >=3.4,<4"]
@@ -23,7 +22,7 @@ frappe = ">=16"
 
 [tool.ruff]
 line-length = 110
-target-version = "py314"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
@@ -44,16 +43,16 @@ ignore = [
     "E402", # module level import not at top of file
     "E501", # line too long
     "E741", # ambiguous variable name
-    "F401", # "unused" imports
+    "F401", # unused imports
     "F403", # can't detect undefined names from * import
     "F405", # can't detect undefined names from * import
     "F722", # syntax error in forward type annotation
     "W191", # indentation contains tabs
-    "UP030", # Use implicit references for positional format fields (translations)
-    "UP031", # Use format specifiers instead of percent format
-    "UP032", # Use f-string instead of `format` call (translations)
+    "UP030", # implicit references for positional format fields
+    "UP031", # format specifiers instead of percent format
+    "UP032", # f-string instead of format()
     "UP037", # quoted annotations
-    "UP040", # Use type aliases instead of type annotations
+    "UP040", # type aliases instead of annotations
 ]
 typing-modules = ["frappe.types.DF"]
 
