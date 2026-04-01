@@ -1,0 +1,12 @@
+[project]
+name = "whatsapp_erpnext"
+authors = [
+    { name = "Finbyz Tech", email = "info@finbyz.tech" }
+]
+description = "ERPNext app to custommize Finbyz Tech Changes"
+readme = "README.md"
+dynamic = ["version"]
+
+[tool.bench.frappe-dependencies]
+frappe = ">=15.33.0"
+erpnext = ">=15.29.0"
