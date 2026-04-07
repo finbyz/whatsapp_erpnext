@@ -30,7 +30,7 @@ def get():
 	"""Get."""
 	hub_challenge = frappe.form_dict.get("hub.challenge")
 	webhook_verify_token = frappe.db.get_single_value(
-		"Whatsapp Settings", "webhook_verify_token"
+		"WhatsApp Settings", "webhook_verify_token"
 	)
 
 	if frappe.form_dict.get("hub.verify_token") != webhook_verify_token:
@@ -40,7 +40,7 @@ def get():
 
 def post():
 	"""Post."""
-	data = frappe.local.form_dict
+	data = frappe.request.get_json()
 	error_field = ""
 	# error_log = frappe.log_error(message=str(data), title="Webhook Data")
 	error_field  = str(data)
