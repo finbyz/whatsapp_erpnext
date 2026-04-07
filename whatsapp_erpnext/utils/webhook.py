@@ -40,7 +40,7 @@ def get():
 
 def post():
 	"""Post."""
-	data = frappe.request.get_json()
+	data = frappe.local.form_dict
 	error_field = ""
 	# error_log = frappe.log_error(message=str(data), title="Webhook Data")
 	error_field  = str(data)
