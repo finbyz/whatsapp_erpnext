@@ -114,8 +114,22 @@ def get_chats():
 		ORDER BY MAX(wm.creation) DESC
 	""", as_dict=1)
 	
+	# Get business phone number to identify the contact side
+	settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+	business_number = (settings.get("phone_id") or "").strip()
+
 	# Process contact display names
 	for chat in chats:
+		# Determine which side is the contact (not the business number)
+		from_num = (chat.get('from') or '').strip()
+		to_num = (chat.get('to') or '').strip()
+		if from_num == business_number:
+			chat['contact_number'] = to_num
+		elif to_num == business_number:
+			chat['contact_number'] = from_num
+		else:
+			# Fallback: prefer 'from' as contact
+			chat['contact_number'] = from_num or to_num
 		# Use full_name if available, then first_name, then fallback to contact ID
 		if chat.get('full_name'):
 			chat['contact_display'] = chat['full_name']

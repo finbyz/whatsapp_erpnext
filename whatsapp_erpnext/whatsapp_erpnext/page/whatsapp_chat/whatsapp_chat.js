@@ -75,7 +75,7 @@ function loadChats() {
 					const unreadBadge = chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : '';
 			const chatName = chat.contact_display || chat.from || chat.to || 'Unknown';
 					const chatElement = $(`
-						<div class="chat-item" data-from="${chat.from}" data-to="${chat.to}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
+						<div class="chat-item" data-from="${chat.from}" data-to="${chat.to}" data-contact-number="${chat.contact_number || chat.from || ''}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
 							<img src="/assets/whatsapp_erpnext/images/default-avatar.png" alt="Contact" class="avatar">
 							<div class="chat-info">
 								<h4>${chatName}</h4>
@@ -87,7 +87,7 @@ function loadChats() {
 					chatElement.on('click', () => {
 						$('.chat-item').removeClass('active');
 						chatElement.addClass('active');
-						loadChat(chat.from, chat.to, chat.party_type, chat.party);
+						loadChat(chat.from, chat.to, chat.party_type, chat.party, chatName);
 					});
 					chatList.append(chatElement);
 				});
@@ -96,7 +96,7 @@ function loadChats() {
 	});
 }
 
-function loadChat(from, to, party_type, party) {
+function loadChat(from, to, party_type, party, chatName) {
 	frappe.call({
 		method: 'whatsapp_erpnext.whatsapp_erpnext.doctype.whatsapp_message.whatsapp_message.get_messages',
 		args: {
@@ -106,8 +106,8 @@ function loadChat(from, to, party_type, party) {
 			party: party
 		},
 		callback: function(response) {
-			if (response.message) {
-				const messages = response.message;
+			if (response.message !== undefined) {
+				const messages = response.message || [];
 				const chatMessages = $('#chat-messages');
 				chatMessages.empty();
 				messages.forEach(message => {
@@ -140,8 +140,12 @@ function loadChat(from, to, party_type, party) {
 					chatMessages.append(messageElement);
 				});
 				chatMessages.scrollTop(chatMessages[0].scrollHeight);
-				const chatName = messages[0]?.contact_display || (messages[0]?.party ? `${messages[0].party_type || ''}: ${messages[0].party}` : messages[0]?.contact_name || 'Chat');
-				$('#current-chat-name').text(chatName);
+				const displayName = messages[0]?.contact_display
+					|| (messages[0]?.party ? `${messages[0].party_type || ''}: ${messages[0].party}` : null)
+					|| messages[0]?.contact_name
+					|| chatName
+					|| 'Chat';
+				$('#current-chat-name').text(displayName);
 			}
 		}
 	});
@@ -152,23 +156,28 @@ function sendMessage() {
 	const content = messageInput.val().trim();
 	if (!content) return;
 	const activeChat = $('.chat-item.active');
+	if (!activeChat.length) {
+		frappe.msgprint('Please select a chat first');
+		return;
+	}
 	const toNumber = activeChat.data('to');
 	const fromNumber = activeChat.data('from');
 	const partyType = activeChat.data('party-type');
 	const party = activeChat.data('party');
-	if (!toNumber && !fromNumber) {
-		frappe.msgprint('Please select a chat first');
-		return;
-	}
-	// For incoming chats, the contact's number is in 'from'; for outgoing it's in 'to'
-	const contactNumber = toNumber || fromNumber;
+
+	// The contact's number is the one that is NOT the business number.
+	// Incoming messages: contact is in 'from', business is in 'to'
+	// Outgoing messages: contact is in 'to', business is in 'from'
+	// We store the contact number on the chat item for reliable lookup.
+	const contactNumber = activeChat.data('contact-number') || fromNumber;
+
 	frappe.call({
 		method: 'whatsapp_erpnext.whatsapp_erpnext.doctype.whatsapp_message.whatsapp_message.send_message',
 		args: {
 			contact: contactNumber,
 			content: content,
-			party_type: partyType,
-			party: party
+			party_type: partyType || '',
+			party: party || ''
 		},
 		callback: function(response) {
 			if (response.message) {
