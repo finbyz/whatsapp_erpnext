@@ -10,13 +10,6 @@ from datetime import datetime
 import pytz
 from frappe.utils import cint
 
-settings = frappe.get_doc(
-			"WhatsApp Settings", "WhatsApp Settings",
-		)
-token = settings.get_password("token")
-url = f"{settings.url}/{settings.version}/"
-bench_location = frappe.utils.get_bench_path()
-site_name = get_site_name(frappe.local.request.host)
 
 @frappe.whitelist(allow_guest=True)
 def webhook():
@@ -125,6 +118,9 @@ def post():
 			
 			elif message_type in ["image", "audio", "video", "document"]:
 				media_id = message[message_type]["id"]
+				settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+				token = settings.get_password("token")
+				url = f"{settings.url}/{settings.version}/"
 				headers = {
 					'Authorization': 'Bearer ' + token
 				}
