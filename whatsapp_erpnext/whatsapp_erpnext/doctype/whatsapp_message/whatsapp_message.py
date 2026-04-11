@@ -92,8 +92,8 @@ def get_chats():
 	"""
 	chats = frappe.db.sql("""
 		SELECT 
-			wm.from,
-			wm.to,
+			wm.`from`,
+			wm.`to`,
 			wm.contact, 
 			wm.link_to as party_type,
 			wm.link_name as party,
@@ -101,13 +101,16 @@ def get_chats():
 			MAX(wm.message) as last_message,
 			MAX(wm.creation) as last_activity,
 			SUM(CASE WHEN wm.type = 'Incoming' AND wm.status != 'Read' THEN 1 ELSE 0 END) as unread_count,
-			-- Get contact details in the main query
 			c.first_name,
 			c.last_name,
 			c.full_name
 		FROM `tabWhatsApp Message` wm
 		LEFT JOIN `tabContact` c ON wm.contact = c.name
-		GROUP BY wm.contact, wm.link_to, wm.link_name
+		GROUP BY
+			LEAST(COALESCE(wm.`from`,''), COALESCE(wm.`to`,'')),
+			GREATEST(COALESCE(wm.`from`,''), COALESCE(wm.`to`,'')),
+			wm.link_to,
+			wm.link_name
 		ORDER BY MAX(wm.creation) DESC
 	""", as_dict=1)
 	
@@ -179,17 +182,20 @@ def get_messages(from_number, to_number, party_type=None, party=None):
 	return messages
 
 @frappe.whitelist()
-def send_message(contact, content):
-	# Create new outgoing message to the contact
+def send_message(contact, content, party_type=None, party=None):
+	settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+	business_number = settings.get("phone_id") or ""
+
 	new_message = frappe.get_doc({
 		"doctype": "WhatsApp Message",
 		"type": "Outgoing",
+		"from": business_number,
 		"to": contact,
 		"message": content,
 		"content_type": "text",
-		"message_type": "Manual"
+		"message_type": "Manual",
+		"link_to": party_type or "",
+		"link_name": party or "",
 	})
 	new_message.insert()
 	return new_message.name
- 
-	
