@@ -87,7 +87,7 @@ function loadChats() {
 					chatElement.on('click', () => {
 						$('.chat-item').removeClass('active');
 						chatElement.addClass('active');
-						loadChat(chat.from, chat.to, chat.party_type, chat.party, chatName);
+						loadChat(chat.contact_number, chat.party_type, chat.party, chatName);
 					});
 					chatList.append(chatElement);
 				});
@@ -96,20 +96,27 @@ function loadChats() {
 	});
 }
 
-function loadChat(from, to, party_type, party, chatName) {
+function loadChat(contactNumber, party_type, party, chatName) {
+	// Set header immediately so it's visible even before messages load
+	$('#current-chat-name').text(chatName || contactNumber || 'Chat');
+
 	frappe.call({
 		method: 'whatsapp_erpnext.whatsapp_erpnext.doctype.whatsapp_message.whatsapp_message.get_messages',
 		args: {
-			from_number: from,
-			to_number: to,
-			party_type: party_type,
-			party: party
+			contact_number: contactNumber,
+			party_type: party_type || '',
+			party: party || ''
 		},
 		callback: function(response) {
 			if (response.message !== undefined) {
 				const messages = response.message || [];
 				const chatMessages = $('#chat-messages');
 				chatMessages.empty();
+
+				if (messages.length === 0) {
+					chatMessages.append('<div class="no-messages">No messages yet</div>');
+				}
+
 				messages.forEach(message => {
 					let tick = '';
 					if (message.direction === 'sent') {
@@ -123,29 +130,24 @@ function loadChat(from, to, party_type, party, chatName) {
 							tick = '<span class="tick failed">&#10007;</span>';
 						}
 					}
-					let contentHtml = message.content;
+					let contentHtml = message.content || '';
 					if (/\.(jpg|jpeg|png|gif)$/i.test(contentHtml)) {
 						contentHtml = `<img src="${contentHtml}" class="chat-image" />`;
 					}
 					const messageElement = $(`
 						<div class="message ${message.direction}">
-							<div class="message-content">
-								${contentHtml} ${tick}
-							</div>
-							<div class="message-time">
-								${frappe.datetime.str_to_user(message.creation)}
-							</div>
+							<div class="message-content">${contentHtml} ${tick}</div>
+							<div class="message-time">${frappe.datetime.str_to_user(message.creation)}</div>
 						</div>
 					`);
 					chatMessages.append(messageElement);
 				});
+
 				chatMessages.scrollTop(chatMessages[0].scrollHeight);
-				const displayName = messages[0]?.contact_display
-					|| (messages[0]?.party ? `${messages[0].party_type || ''}: ${messages[0].party}` : null)
-					|| messages[0]?.contact_name
-					|| chatName
-					|| 'Chat';
-				$('#current-chat-name').text(displayName);
+
+				// Update header with resolved contact name if available
+				const resolvedName = messages[0]?.contact_display || chatName || contactNumber || 'Chat';
+				$('#current-chat-name').text(resolvedName);
 			}
 		}
 	});
@@ -155,21 +157,22 @@ function sendMessage() {
 	const messageInput = $('#message-input');
 	const content = messageInput.val().trim();
 	if (!content) return;
+
 	const activeChat = $('.chat-item.active');
 	if (!activeChat.length) {
 		frappe.msgprint('Please select a chat first');
 		return;
 	}
-	const toNumber = activeChat.data('to');
-	const fromNumber = activeChat.data('from');
+
+	const contactNumber = activeChat.data('contact-number');
 	const partyType = activeChat.data('party-type');
 	const party = activeChat.data('party');
+	const chatName = activeChat.find('h4').text();
 
-	// The contact's number is the one that is NOT the business number.
-	// Incoming messages: contact is in 'from', business is in 'to'
-	// Outgoing messages: contact is in 'to', business is in 'from'
-	// We store the contact number on the chat item for reliable lookup.
-	const contactNumber = activeChat.data('contact-number') || fromNumber;
+	if (!contactNumber) {
+		frappe.msgprint('Could not determine contact number');
+		return;
+	}
 
 	frappe.call({
 		method: 'whatsapp_erpnext.whatsapp_erpnext.doctype.whatsapp_message.whatsapp_message.send_message',
@@ -182,7 +185,7 @@ function sendMessage() {
 		callback: function(response) {
 			if (response.message) {
 				messageInput.val('');
-				loadChat(fromNumber, toNumber, partyType, party);
+				loadChat(contactNumber, partyType, party, chatName);
 			}
 		}
 	});

@@ -217,3 +217,10 @@
     max-width: 200px;
     max-height: 200px;
 } 
+
+.no-messages {
+    text-align: center;
+    color: #667781;
+    font-size: 13px;
+    margin-top: 40px;
+}

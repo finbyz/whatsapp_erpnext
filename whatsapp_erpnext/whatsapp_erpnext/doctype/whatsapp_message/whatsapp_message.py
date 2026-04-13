@@ -141,7 +141,7 @@ def get_chats():
 			chat['contact_display'] = chat['contact']
 		else:
 			# Fallback for cases where contact might be None
-			chat['contact_display'] = chat.get('from') or chat.get('to') or 'Unknown'
+			chat['contact_display'] = chat.get('contact_number') or chat.get('from') or chat.get('to') or 'Unknown'
 		
 		# Clean up temporary fields
 		chat.pop('first_name', None)
@@ -155,13 +155,17 @@ def get_chats():
 	return chats
 
 @frappe.whitelist()
-def get_messages(from_number, to_number, party_type=None, party=None):
-	# Fetch all messages for this chat (both directions)
-	args = [from_number, to_number, to_number, from_number]
+def get_messages(contact_number, party_type=None, party=None):
+	"""Fetch all messages for a conversation with a given contact number (either direction)."""
+	settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
+	business_number = (settings.get("phone_id") or "").strip()
+
+	args = [contact_number, business_number, business_number, contact_number]
 	party_filter = ""
 	if party_type and party:
 		party_filter = "AND link_to = %s AND link_name = %s"
 		args += [party_type, party]
+
 	messages = frappe.db.sql(f"""
 		SELECT
 			name,
@@ -178,21 +182,21 @@ def get_messages(from_number, to_number, party_type=None, party=None):
 		{party_filter}
 		ORDER BY creation ASC
 	""", tuple(args), as_dict=1)
+
 	# Mark all incoming unread as read
 	frappe.db.sql("""
 		UPDATE `tabWhatsApp Message` SET status = 'Read'
-		WHERE `from` = %s AND `to` = %s AND status != 'Read'
-	""", (from_number, to_number))
+		WHERE `from` = %s AND `to` = %s AND type = 'Incoming' AND status != 'Read'
+	""", (contact_number, business_number))
+
 	for msg in messages:
-		# Sent if outgoing and to == to_number, else received
-		if msg["type"] == "Outgoing" and msg["to"] == to_number:
+		if msg["type"] == "Outgoing":
 			msg["direction"] = "sent"
 		else:
 			msg["direction"] = "received"
-		# Add contact_display (contact name if available)
-		contact_id = msg["from"] if msg["direction"] == "received" else msg["to"]
-		contact_name = frappe.db.get_value("Contact", contact_id, "first_name")
-		msg["contact_display"] = contact_name or contact_id
+		contact_name = frappe.db.get_value("Contact", {"mobile_no": contact_number}, "full_name")
+		msg["contact_display"] = contact_name or contact_number
+
 	return messages
 
 @frappe.whitelist()
