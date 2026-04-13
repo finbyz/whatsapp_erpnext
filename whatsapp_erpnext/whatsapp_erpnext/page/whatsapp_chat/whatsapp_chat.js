@@ -75,7 +75,7 @@ function loadChats() {
 					const unreadBadge = chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : '';
 			const chatName = chat.contact_display || chat.from || chat.to || 'Unknown';
 					const chatElement = $(`
-						<div class="chat-item" data-from="${chat.from}" data-to="${chat.to}" data-contact-number="${chat.contact_number || chat.from || ''}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
+						<div class="chat-item" data-contact-number="${chat.contact_number || ''}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
 							<img src="/assets/whatsapp_erpnext/images/default-avatar.png" alt="Contact" class="avatar">
 							<div class="chat-info">
 								<h4>${chatName}</h4>

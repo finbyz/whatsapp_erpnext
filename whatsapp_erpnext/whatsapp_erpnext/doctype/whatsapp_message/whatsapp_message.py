@@ -88,13 +88,17 @@ class WhatsAppMessage(Document):
 def get_chats():
 	"""
 	Get unique chat conversations with latest message and unread count.
-	Returns list of chat summaries ordered by most recent activity.
+	Uses the 'type' field to reliably identify the contact number:
+	  - Incoming: contact is in `from`
+	  - Outgoing: contact is in `to`
 	"""
 	chats = frappe.db.sql("""
-		SELECT 
-			wm.`from`,
-			wm.`to`,
-			wm.contact, 
+		SELECT
+			CASE
+				WHEN wm.type = 'Incoming' THEN wm.`from`
+				ELSE wm.`to`
+			END as contact_number,
+			wm.contact,
 			wm.link_to as party_type,
 			wm.link_name as party,
 			MAX(wm.name) as chat_id,
@@ -107,61 +111,38 @@ def get_chats():
 		FROM `tabWhatsApp Message` wm
 		LEFT JOIN `tabContact` c ON wm.contact = c.name
 		GROUP BY
-			LEAST(COALESCE(wm.`from`,''), COALESCE(wm.`to`,'')),
-			GREATEST(COALESCE(wm.`from`,''), COALESCE(wm.`to`,'')),
+			CASE WHEN wm.type = 'Incoming' THEN wm.`from` ELSE wm.`to` END,
 			wm.link_to,
 			wm.link_name
 		ORDER BY MAX(wm.creation) DESC
 	""", as_dict=1)
-	
-	# Get business phone number to identify the contact side
-	settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
-	business_number = (settings.get("phone_id") or "").strip()
 
 	# Process contact display names
 	for chat in chats:
-		# Determine which side is the contact (not the business number)
-		from_num = (chat.get('from') or '').strip()
-		to_num = (chat.get('to') or '').strip()
-		if from_num == business_number:
-			chat['contact_number'] = to_num
-		elif to_num == business_number:
-			chat['contact_number'] = from_num
-		else:
-			# Fallback: prefer 'from' as contact
-			chat['contact_number'] = from_num or to_num
-		# Use full_name if available, then first_name, then fallback to contact ID
 		if chat.get('full_name'):
 			chat['contact_display'] = chat['full_name']
 		elif chat.get('first_name'):
-			# Combine first and last name if available
-			last_name = chat.get('last_name', '').strip()
+			last_name = (chat.get('last_name') or '').strip()
 			chat['contact_display'] = f"{chat['first_name']} {last_name}".strip()
 		elif chat.get('contact'):
 			chat['contact_display'] = chat['contact']
 		else:
-			# Fallback for cases where contact might be None
-			chat['contact_display'] = chat.get('contact_number') or chat.get('from') or chat.get('to') or 'Unknown'
-		
-		# Clean up temporary fields
+			chat['contact_display'] = chat.get('contact_number') or 'Unknown'
+
 		chat.pop('first_name', None)
 		chat.pop('last_name', None)
 		chat.pop('full_name', None)
-		
-		# Format last_activity for frontend
+
 		if chat.get('last_activity'):
 			chat['last_activity_formatted'] = frappe.utils.pretty_date(chat['last_activity'])
-	
+
 	return chats
 
 @frappe.whitelist()
 def get_messages(contact_number, party_type=None, party=None):
 	"""Fetch all messages for a conversation with a given contact number (either direction)."""
-	settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
-	business_number = (settings.get("phone_id") or "").strip()
-
-	args = [contact_number, business_number, business_number, contact_number]
 	party_filter = ""
+	args = [contact_number, contact_number]
 	if party_type and party:
 		party_filter = "AND link_to = %s AND link_name = %s"
 		args += [party_type, party]
@@ -178,7 +159,7 @@ def get_messages(contact_number, party_type=None, party=None):
 			link_name as party,
 			status
 		FROM `tabWhatsApp Message`
-		WHERE ((`from` = %s AND `to` = %s) OR (`from` = %s AND `to` = %s))
+		WHERE (`from` = %s OR `to` = %s)
 		{party_filter}
 		ORDER BY creation ASC
 	""", tuple(args), as_dict=1)
@@ -186,15 +167,16 @@ def get_messages(contact_number, party_type=None, party=None):
 	# Mark all incoming unread as read
 	frappe.db.sql("""
 		UPDATE `tabWhatsApp Message` SET status = 'Read'
-		WHERE `from` = %s AND `to` = %s AND type = 'Incoming' AND status != 'Read'
-	""", (contact_number, business_number))
+		WHERE `from` = %s AND type = 'Incoming' AND status != 'Read'
+	""", (contact_number,))
+
+	contact_name = frappe.db.get_value("Contact", {"mobile_no": contact_number}, "full_name")
 
 	for msg in messages:
 		if msg["type"] == "Outgoing":
 			msg["direction"] = "sent"
 		else:
 			msg["direction"] = "received"
-		contact_name = frappe.db.get_value("Contact", {"mobile_no": contact_number}, "full_name")
 		msg["contact_display"] = contact_name or contact_number
 
 	return messages
