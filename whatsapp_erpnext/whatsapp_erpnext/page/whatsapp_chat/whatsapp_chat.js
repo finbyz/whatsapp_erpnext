@@ -15,6 +15,9 @@ frappe.pages['whatsapp-chat'].on_page_load = function(wrapper) {
 						<h3>${frappe.session.user}</h3>
 					</div>
 				</div>
+				<div class="chat-search-wrapper">
+					<input type="text" id="chat-search" placeholder="Search by number or name..." autocomplete="off">
+				</div>
 			</div>
 			<div class="chat-list" id="chat-list">
 				<!-- Chat list will be populated here -->
@@ -61,6 +64,16 @@ function initializeChat() {
 			sendMessage();
 		}
 	});
+
+	// Set up chat search
+	$(document).on('input', '#chat-search', function() {
+		const query = $(this).val().toLowerCase().trim();
+		$('#chat-list .chat-item').each(function() {
+			const name = $(this).find('h4').text().toLowerCase();
+			const number = ($(this).data('contact-number') || '').toLowerCase();
+			$(this).toggle(!query || name.includes(query) || number.includes(query));
+		});
+	});
 }
 
 function loadChats() {
@@ -71,9 +84,25 @@ function loadChats() {
 				const chats = response.message;
 				const chatList = $('#chat-list');
 				chatList.empty();
+
+				// Merge duplicate contact numbers — keep the one with the highest unread count
+				// and sum unread counts across all entries for the same number.
+				const merged = {};
 				chats.forEach(chat => {
+					const key = (chat.contact_number || '').trim();
+					if (!key) return;
+					if (!merged[key]) {
+						merged[key] = Object.assign({}, chat, { unread_count: chat.unread_count || 0 });
+					} else {
+						// Accumulate unread count
+						merged[key].unread_count = (merged[key].unread_count || 0) + (chat.unread_count || 0);
+						// Keep the most recent last_message (first entry from server is assumed latest)
+					}
+				});
+
+				Object.values(merged).forEach(chat => {
 					const unreadBadge = chat.unread_count > 0 ? `<span class="unread-badge">${chat.unread_count}</span>` : '';
-			const chatName = chat.contact_display || chat.from || chat.to || 'Unknown';
+					const chatName = chat.contact_display || chat.from || chat.to || 'Unknown';
 					const chatElement = $(`
 						<div class="chat-item" data-contact-number="${chat.contact_number || ''}" data-party-type="${chat.party_type || ''}" data-party="${chat.party || ''}">
 							<img src="/assets/whatsapp_erpnext/images/default-avatar.png" alt="Contact" class="avatar">
