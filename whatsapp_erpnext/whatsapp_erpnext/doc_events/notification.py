@@ -89,10 +89,13 @@ def send_template_message(self, doc: Document, contact_no=None):
 
     if template:
         for row in self.recipients:
-            if row.receiver_by_document_field != "owner":
-                if not contact_no:
-                    contact_no = doc.get(row.receiver_by_document_field)
-                if contact_no:
+            # Use provided contact_no first, otherwise get from document field
+            mobile_number = contact_no
+            
+            if not mobile_number and row.receiver_by_document_field != "owner":
+                mobile_number = doc.get(row.receiver_by_document_field)
+            
+            if mobile_number:
                     # Get contact details from phone number
                     contact_query = f"""
 					SELECT 
@@ -109,7 +112,7 @@ def send_template_message(self, doc: Document, contact_no=None):
                             ON dl.parent = c.name 
                         WHERE 
                             LENGTH(cp.phone) >= 10
-                            AND cp.phone = '{contact_no}'
+                            AND cp.phone = '{mobile_number}'
                         ORDER BY 
 						CASE dl.link_doctype
 							WHEN 'Customer' THEN 1
@@ -134,7 +137,7 @@ def send_template_message(self, doc: Document, contact_no=None):
 
                     data = {
                         "messaging_product": "whatsapp",
-                        "to": contact_no,
+                        "to": mobile_number,
                         "link_to": link_to,
                         "link_name": link_name,
                         "contact": contact_name,
