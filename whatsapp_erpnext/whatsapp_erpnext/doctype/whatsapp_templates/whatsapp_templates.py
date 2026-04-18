@@ -194,22 +194,22 @@ def fetch():
 
 				# update header
 				if component['type'] == "HEADER":
-					doc.header_type = component['format']
+					doc.header_type = component.get('format', '')
 
 					# if format is text update sample text
-					if component['format'] == 'TEXT':
-						doc.header = component['text']
+					if component.get('format') == 'TEXT':
+						doc.header = component.get('text', '')
 				# Update footer text
 				elif component['type'] == 'FOOTER':
-					doc.footer = component['text']
+					doc.footer = component.get('text', '')
 
 				# update template text
 				elif component['type'] == 'BODY':
-					doc.template = component['text']
+					doc.template = component.get('text', '')
 					if component.get('example'):
 						doc.sample_values = ','.join(component['example']['body_text'][0])
 				elif component['type'] == 'BUTTONS':
-					doc.buttons = component['text']
+					doc.buttons = component.get('text', '')
 					if component.get('example'):
 						doc.sample_values = ','.join(component['example']['body_text'][0])
 				
@@ -222,11 +222,24 @@ def fetch():
 			frappe.db.commit()
 
 	except Exception as e:
-		res = frappe.flags.integration_request.json()['error']
-		error_message = res.get('error_user_msg', res.get("message"))
+		# Check if integration_request has a response and if it contains error info
+		if hasattr(frappe.flags, 'integration_request') and frappe.flags.integration_request:
+			try:
+				res = frappe.flags.integration_request.json()
+				if 'error' in res:
+					error_data = res['error']
+					error_message = error_data.get('error_user_msg', error_data.get("message", str(e)))
+					frappe.throw(
+						msg=error_message,
+						title=error_data.get("error_user_title", "Error"),
+					)
+			except (ValueError, KeyError, AttributeError):
+				pass
+		
+		# If we couldn't get a proper error message from the response, throw the original exception
 		frappe.throw(
-			msg=error_message,
-			title=res.get("error_user_title", "Error"),
+			msg=str(e),
+			title="Error Fetching Templates",
 		)
 
 	return "Successfully fetched templates from meta"
