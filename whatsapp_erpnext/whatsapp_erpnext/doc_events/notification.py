@@ -294,46 +294,59 @@ def notify(self, data, label=None):
     token = settings.get_password("token")
 
     headers = {"authorization": f"Bearer {token}", "content-type": "application/json"}
-    # try:
-    frappe.log_error(f"data response", json.dumps(data))
-    response = make_post_request(
-        f"{settings.url}/{settings.version}/{settings.phone_id}/messages",
-        headers=headers,
-        data=json.dumps(data),
-    )
     
-    # error_log = frappe.log_error(message=str(response), title="WhatsApp Message Response")
-    data["error_field"] = str(response)  # Save the message in the error_field
-
-        # frappe.log_error(message=str(response), title="WhatsApp Message Triggered")
-        # frappe.log_error(message=str(data), title="WhatsApp Message Data")
-
-    message_id = response["messages"][0]["id"]
-    enqueue(save_whatsapp_log,self=self, data=data, message_id=message_id, label=label)
-
-    # message_id = response["messages"][0]["id"]
-    # enqueue(save_whatsapp_log,self=self, data=data, message_id=message_id, label=label)
-
-    frappe.msgprint("WhatsApp Message Triggered", indicator="green", alert=False)
-
-    # except Exception as e:
-    #     response = frappe.flags.integration_request.json()["error"]
-    #     error_message = response.get("Error", response.get("message"))
-    #     frappe.msgprint(
-    #         f"Failed to trigger whatsapp message: {error_message}",
-    #         indicator="red",
-    #         alert=True,
-    #     )
-    # finally:
-    #     status_response = frappe.flags.integration_request.json().get("error")
-    #     frappe.get_doc(
-    #         {
-    #             "doctype": "Integration Request",
-    #             "integration_request_service": self.custom_whatsapp_template,
-    #             "output": str(frappe.flags.integration_request.json()),
-    #             "status": "Failed" if status_response else "Completed",
-    #         }
-    #     ).insert(ignore_permissions=True)
+    try:
+        frappe.log_error(f"data response", json.dumps(data))
+        response = make_post_request(
+            f"{settings.url}/{settings.version}/{settings.phone_id}/messages",
+            headers=headers,
+            data=json.dumps(data),
+        )
+        
+        # Check if response has messages (success case)
+        if response and "messages" in response and response["messages"]:
+            message_id = response["messages"][0]["id"]
+            data["error_field"] = str(response)  # Save the response
+            
+            enqueue(save_whatsapp_log, self=self, data=data, message_id=message_id, label=label)
+            frappe.msgprint("WhatsApp Message Triggered", indicator="green", alert=False)
+        else:
+            # Handle error response
+            error_msg = "Unknown error"
+            if response:
+                data["error_field"] = str(response)
+                if "error" in response:
+                    error_data = response["error"]
+                    error_msg = error_data.get("message", error_data.get("error_user_msg", str(error_data)))
+                else:
+                    error_msg = str(response)
+            
+            frappe.log_error(message=str(response), title="WhatsApp Message Failed")
+            frappe.msgprint(
+                f"Failed to send WhatsApp message: {error_msg}",
+                indicator="red",
+                alert=True,
+            )
+            
+    except Exception as e:
+        error_msg = str(e)
+        frappe.log_error(message=error_msg, title="WhatsApp Message Exception")
+        
+        # Try to get error from integration request if available
+        if hasattr(frappe.flags, 'integration_request') and frappe.flags.integration_request:
+            try:
+                response = frappe.flags.integration_request.json()
+                if "error" in response:
+                    error_data = response["error"]
+                    error_msg = error_data.get("message", error_data.get("error_user_msg", error_msg))
+            except:
+                pass
+        
+        frappe.msgprint(
+            f"Failed to trigger WhatsApp message: {error_msg}",
+            indicator="red",
+            alert=True,
+        )
 
 
 def format_number(self, number):
