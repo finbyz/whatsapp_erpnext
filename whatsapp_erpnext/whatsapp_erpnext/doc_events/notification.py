@@ -280,8 +280,17 @@ def send_template_message(self, doc: Document, contact_no=None):
 
                     notify(self, data, label)
                     if file_doc:
-                        frappe.delete_doc("File", file_doc.name, ignore_permissions=True)
-
+                        enqueue(
+                            "whatsapp_erpnext.whatsapp_erpnext.doc_events.notification.delete_file",
+                            file_name=file_doc.name,
+                            enqueue_after=600
+                        )
+def delete_file(file_name):
+    try:
+        frappe.delete_doc("File", file_name, ignore_permissions=True)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(f"File Delete Error: {e}", "Delete File Job")
 def notify(self, data, label=None):
     """Notify."""
     settings = frappe.get_doc(
@@ -364,7 +373,7 @@ def format_message(data):
     return " , ".join(message_parts)
 # format_message function end 
 
-def save_whatsapp_log(self, data, message_id, label=None):
+def save_whatsapp_log(self, data, message_id, label=None,retry=False):
     # format_message function start
     formatted_message = format_message(data)
     
@@ -421,6 +430,7 @@ def save_whatsapp_log(self, data, message_id, label=None):
         "doctype_link_name": data.get("doctype_link_name"),
         "error_field": data.get("error_field"),
         "notification": notification,
+        "retry_count": 5 if retry else 1,
     })
     whatsapp_message.save(ignore_permissions=True)
 
@@ -446,7 +456,7 @@ def retry_message(whatsapp_msg_id):
         headers=headers,
         data=json.dumps(data),
     )
-
+    whatsapp_msg.retry_count += 1
     if "messages" in response and response["messages"]:
         message_id = response["messages"][0]["id"]
         whatsapp_msg.message_id = message_id 
