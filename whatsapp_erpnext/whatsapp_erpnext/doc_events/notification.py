@@ -158,9 +158,18 @@ def send_template_message(self, doc: Document, contact_no=None):
                     if self.fields:
                         parameters = []
                         for field in self.fields:
+                            # Get the raw value first, then format if needed
+                            field_value = doc.get(field.field_name)
+                            
+                            # If value exists, convert to string and strip whitespace
+                            if field_value is not None:
+                                field_value = str(field_value).strip()
+                            else:
+                                field_value = ""
+                            
                             parameters.append({
                                 "type": "text",
-                                "text": doc.get_formatted(field.field_name)
+                                "text": field_value
                             })
 
                         data['template']["components"] = [{
@@ -296,12 +305,48 @@ def notify(self, data, label=None):
     headers = {"authorization": f"Bearer {token}", "content-type": "application/json"}
     
     try:
-        frappe.log_error(f"data response", json.dumps(data))
-        response = make_post_request(
-            f"{settings.url}/{settings.version}/{settings.phone_id}/messages",
-            headers=headers,
-            data=json.dumps(data),
-        )
+        frappe.log_error(f"WhatsApp Request Data: {json.dumps(data, indent=2)}", "WhatsApp Message Request")
+        
+        # Make the request but catch HTTPError to get response body
+        try:
+            response = make_post_request(
+                f"{settings.url}/{settings.version}/{settings.phone_id}/messages",
+                headers=headers,
+                data=json.dumps(data),
+            )
+        except Exception as req_error:
+            # Try to get the response body from the integration request
+            if hasattr(frappe.flags, 'integration_request') and frappe.flags.integration_request:
+                try:
+                    error_response = frappe.flags.integration_request.json()
+                    frappe.log_error(
+                        f"WhatsApp Error Response: {json.dumps(error_response, indent=2)}", 
+                        "WhatsApp API Error"
+                    )
+                    
+                    if "error" in error_response:
+                        error_data = error_response["error"]
+                        error_msg = error_data.get("message", "")
+                        error_code = error_data.get("code", "")
+                        error_type = error_data.get("type", "")
+                        error_details = error_data.get("error_data", {})
+                        
+                        detailed_msg = f"WhatsApp API Error:\n"
+                        detailed_msg += f"Code: {error_code}\n"
+                        detailed_msg += f"Type: {error_type}\n"
+                        detailed_msg += f"Message: {error_msg}\n"
+                        if error_details:
+                            detailed_msg += f"Details: {json.dumps(error_details, indent=2)}"
+                        
+                        frappe.msgprint(detailed_msg, indicator="red", alert=True, title="WhatsApp Error")
+                        return
+                except:
+                    pass
+            
+            # Re-raise if we couldn't extract error details
+            raise req_error
+        
+        frappe.log_error(f"WhatsApp Response: {json.dumps(response, indent=2)}", "WhatsApp Message Response")
         
         # Check if response has messages (success case)
         if response and "messages" in response and response["messages"]:
@@ -318,29 +363,27 @@ def notify(self, data, label=None):
                 if "error" in response:
                     error_data = response["error"]
                     error_msg = error_data.get("message", error_data.get("error_user_msg", str(error_data)))
+                    error_code = error_data.get("code", "")
+                    error_details = f"Code: {error_code}, Message: {error_msg}"
                 else:
-                    error_msg = str(response)
+                    error_details = str(response)
             
-            frappe.log_error(message=str(response), title="WhatsApp Message Failed")
+            frappe.log_error(
+                message=f"Request: {json.dumps(data, indent=2)}\n\nResponse: {str(response)}", 
+                title="WhatsApp Message Failed"
+            )
             frappe.msgprint(
-                f"Failed to send WhatsApp message: {error_msg}",
+                f"Failed to send WhatsApp message: {error_details}",
                 indicator="red",
                 alert=True,
             )
             
     except Exception as e:
         error_msg = str(e)
-        frappe.log_error(message=error_msg, title="WhatsApp Message Exception")
-        
-        # Try to get error from integration request if available
-        if hasattr(frappe.flags, 'integration_request') and frappe.flags.integration_request:
-            try:
-                response = frappe.flags.integration_request.json()
-                if "error" in response:
-                    error_data = response["error"]
-                    error_msg = error_data.get("message", error_data.get("error_user_msg", error_msg))
-            except:
-                pass
+        frappe.log_error(
+            message=f"Request: {json.dumps(data, indent=2)}\n\nException: {error_msg}\n\n{frappe.get_traceback()}", 
+            title="WhatsApp Message Exception"
+        )
         
         frappe.msgprint(
             f"Failed to trigger WhatsApp message: {error_msg}",
