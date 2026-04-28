@@ -206,20 +206,7 @@ def send_template_message(self, doc: Document, contact_no=None):
                                                 "payload": doc.get(self.fields[idx].field_name)
                                             }
                                         ]
-                                elif btn['type'] == 'OPEN_ORDER_DETAILS':
-                                    button_component["sub_type"] = "order_details"
 
-                                    button_component["parameters"] = [
-                                        {
-                                            "type": "action",
-                                            "action": {
-                                                "order_details": {
-                                                    "reference_id": str(doc.name),
-                                                    "type": "digital-goods"
-                                                }
-                                            }
-                                        }
-                                    ]
                                 else:
                                     button_component["sub_type"] = btn['type'].lower()
                                 data['template']["components"].append(button_component)
