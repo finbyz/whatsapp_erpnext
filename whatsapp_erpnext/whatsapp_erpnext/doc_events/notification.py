@@ -276,17 +276,31 @@ def send_template_message(self, doc: Document, contact_no=None):
                         full_url = frappe.utils.get_url(url)
 
                         # Append to your template data
-                        data["template"]["components"].append(
-                            {
-                                "type": "header",
-                                "parameters": [
-                                    {
-                                        "type": "document",
-                                        "document": {"link": full_url, "filename": filename},
-                                    }
-                                ],
-                            }
-                        )
+                        if template.get("header_type") == "DOCUMENT":
+                            data["template"]["components"].append(
+                                {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "document",
+                                            "document": {"link": full_url, "filename": filename},
+                                        }
+                                    ],
+                                }
+                            )
+                        elif template.get("header_type") == "TEXT":
+                            data["template"]["components"].append(
+                                {
+                                    "type": "header",
+                                    "parameters": [
+                                        {
+                                            "type": "text",
+                                            "text": template.get("header_text", "Document Attached")
+                                        }
+                                    ],
+                                }
+                            )
+                            
 
                         label = f"{doc_data['doctype']} - {doc_data['name']}"
 
