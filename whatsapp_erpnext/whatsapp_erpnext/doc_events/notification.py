@@ -288,19 +288,6 @@ def send_template_message(self, doc: Document, contact_no=None):
                                     ],
                                 }
                             )
-                        elif template.get("header_type") == "TEXT":
-                            data["template"]["components"].append(
-                                {
-                                    "type": "header",
-                                    "parameters": [
-                                        {
-                                            "type": "text",
-                                            "text": template.get("header_text", "Document Attached")
-                                        }
-                                    ],
-                                }
-                            )
-                            
 
                         label = f"{doc_data['doctype']} - {doc_data['name']}"
 
