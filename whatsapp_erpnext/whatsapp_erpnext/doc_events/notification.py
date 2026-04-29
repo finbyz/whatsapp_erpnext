@@ -299,12 +299,20 @@ def send_template_message(self, doc: Document, contact_no=None):
                             file_name=file_doc.name,
                             enqueue_after=600
                         )
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5ac482a (delete file after 10 min)
 def delete_file(file_name):
     try:
         frappe.delete_doc("File", file_name, ignore_permissions=True)
         frappe.db.commit()
     except Exception as e:
         frappe.log_error(f"File Delete Error: {e}", "Delete File Job")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5ac482a (delete file after 10 min)
 def notify(self, data, label=None):
     """Notify."""
     settings = frappe.get_doc(
