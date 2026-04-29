@@ -294,7 +294,18 @@ def send_template_message(self, doc: Document, contact_no=None):
 
                     notify(self, data, label)
                     if file_doc:
-                        frappe.delete_doc("File", file_doc.name, ignore_permissions=True)
+                        enqueue(
+                            "whatsapp_erpnext.whatsapp_erpnext.doc_events.notification.delete_file",
+                            file_name=file_doc.name,
+                            enqueue_after=600
+                        )
+
+def delete_file(file_name):
+    try:
+        frappe.delete_doc("File", file_name, ignore_permissions=True)
+        frappe.db.commit()
+    except Exception as e:
+        frappe.log_error(f"File Delete Error: {e}", "Delete File Job")
 
 def notify(self, data, label=None):
     """Notify."""
