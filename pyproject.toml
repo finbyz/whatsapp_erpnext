@@ -1,6 +1,7 @@
 [project]
 name = "whatsapp_erpnext"
 authors = [
+<<<<<<< HEAD
     { name = "Finbyz Tech", email = "info@finbyz.tech" }
 ]
 description = "ERPNext app to custommize Finbyz Tech Changes"
@@ -27,6 +28,8 @@ erpnext = ">=15.29.0"
 [project]
 name = "whatsapp_erpnext"
 authors = [
+=======
+>>>>>>> version-16
     { name = "Finbyz Tech Pvt Ltd", email = "info@finbyz.com" }
 ]
 description = "WhatsApp integration with ERPNext"
