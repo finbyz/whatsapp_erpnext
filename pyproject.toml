@@ -1,32 +1,6 @@
 [project]
 name = "whatsapp_erpnext"
 authors = [
-    { name = "Finbyz Tech", email = "info@finbyz.tech" }
-]
-description = "ERPNext app to custommize Finbyz Tech Changes"
-readme = "README.md"
-dynamic = ["version"]
-
-[tool.bench.frappe-dependencies]
-frappe = ">=15.33.0"
-erpnext = ">=15.29.0"
-
-[project]
-name = "whatsapp_erpnext"
-authors = [
-    { name = "Finbyz Tech", email = "info@finbyz.tech" }
-]
-description = "ERPNext app to custommize Finbyz Tech Changes"
-readme = "README.md"
-dynamic = ["version"]
-
-[tool.bench.frappe-dependencies]
-frappe = ">=15.33.0"
-erpnext = ">=15.29.0"
-
-[project]
-name = "whatsapp_erpnext"
-authors = [
     { name = "Finbyz Tech Pvt Ltd", email = "info@finbyz.com" }
 ]
 description = "WhatsApp integration with ERPNext"
@@ -39,50 +13,8 @@ dependencies = []
 requires = ["flit_core >=3.4,<4"]
 build-backend = "flit_core.buildapi"
 
-# These dependencies are only installed when developer mode is enabled
 [tool.bench.dev-dependencies]
 # package_name = "~=1.1.0"
 
 [tool.bench.frappe-dependencies]
-frappe = ">=16"
-
-[tool.ruff]
-line-length = 110
-target-version = "py310"
-
-[tool.ruff.lint]
-select = [
-    "F",
-    "E",
-    "W",
-    "I",
-    "UP",
-    "B",
-    "RUF",
-]
-ignore = [
-    "B017", # assertRaises(Exception) - should be more specific
-    "B018", # useless expression, not assigned to anything
-    "B023", # function doesn't bind loop variable - will have last iteration's value
-    "B904", # raise inside except without from
-    "E101", # indentation contains mixed spaces and tabs
-    "E402", # module level import not at top of file
-    "E501", # line too long
-    "E741", # ambiguous variable name
-    "F401", # unused imports
-    "F403", # can't detect undefined names from * import
-    "F405", # can't detect undefined names from * import
-    "F722", # syntax error in forward type annotation
-    "W191", # indentation contains tabs
-    "UP030", # implicit references for positional format fields
-    "UP031", # format specifiers instead of percent format
-    "UP032", # f-string instead of format()
-    "UP037", # quoted annotations
-    "UP040", # type aliases instead of annotations
-]
-typing-modules = ["frappe.types.DF"]
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "tab"
-docstring-code-format = true
+frappe = ">=16.0.0,<17.0.0"
