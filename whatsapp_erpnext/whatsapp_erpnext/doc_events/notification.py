@@ -297,7 +297,6 @@ def send_template_message(self, doc: Document, contact_no=None):
                         enqueue(
                             "whatsapp_erpnext.whatsapp_erpnext.doc_events.notification.delete_file",
                             file_name=file_doc.name,
-                            enqueue_after=600
                         )
 def delete_file(file_name):
     try:
