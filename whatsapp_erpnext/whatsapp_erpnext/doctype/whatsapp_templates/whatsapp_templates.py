@@ -212,6 +212,8 @@ def fetch():
 					doc.buttons = component.get('text', '')
 					if component.get('example'):
 						doc.sample_values = ','.join(component['example']['body_text'][0])
+					elif 'body_text_named_params' in example:
+						doc.sample_values = ','.join(p.get('example', '') for p in example['body_text_named_params'])
 				
 			# if document exists update else insert
 			# used db_update and db_insert to ignore hooks
