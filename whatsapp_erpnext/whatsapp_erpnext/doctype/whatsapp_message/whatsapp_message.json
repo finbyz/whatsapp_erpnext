@@ -13,13 +13,27 @@
   "status",
   "to",
   "from",
+  "message_datetime",
+  "date",
+  "document_name",
+  "doctype_link_name",
+  "notification",
+  "rejection_remarks",
+  "retry_count",
+  "contact_not_found",
   "column_break_5",
+  "link_to",
+  "link_name",
+  "contact",
   "message_id",
   "message_type",
   "conversation_id",
   "content_type",
   "attach",
-  "message"
+  "message",
+  "mesaage_data",
+  "error_field",
+  "comment"
  ],
  "fields": [
   {
@@ -50,14 +64,14 @@
    "description": "Mobile number with country code",
    "fieldname": "to",
    "fieldtype": "Data",
-   "label": "To",
+   "label": "To Customer",
    "set_only_once": 1
   },
   {
    "depends_on": "eval:(doc.type==\"Incoming\");",
    "fieldname": "from",
    "fieldtype": "Data",
-   "label": "From",
+   "label": "From Customer",
    "set_only_once": 1
   },
   {
@@ -107,11 +121,113 @@
    "fieldtype": "HTML Editor",
    "label": "Message",
    "set_only_once": 1
+  },
+  {
+   "fieldname": "message_datetime",
+   "fieldtype": "Datetime",
+   "label": "Message DateTime",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Date",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "link_to",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Party Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "link_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Party",
+   "options": "link_to",
+   "read_only": 1
+  },
+  {
+   "fieldname": "comment",
+   "fieldtype": "Link",
+   "label": "Comment",
+   "options": "Comment",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Contact",
+   "options": "Contact",
+   "read_only": 1
+  },
+  {
+   "fieldname": "document_name",
+   "fieldtype": "Link",
+   "label": "Doctype Name",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "doctype_link_name",
+   "fieldtype": "Dynamic Link",
+   "label": "Doctype Link Name",
+   "options": "document_name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "error_field",
+   "fieldtype": "Small Text",
+   "label": "WhatsApp Message Response",
+   "read_only": 1
+  },
+  {
+   "fieldname": "mesaage_data",
+   "fieldtype": "Small Text",
+   "label": "Message Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "notification",
+   "fieldtype": "Link",
+   "label": "Notification",
+   "options": "Notification",
+   "read_only": 1
+  },
+  {
+   "depends_on": "rejection_remarks",
+   "fieldname": "rejection_remarks",
+   "fieldtype": "Small Text",
+   "label": "Rejection Remarks",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "retry_count",
+   "fieldtype": "Int",
+   "hidden": 1,
+   "label": "Retry Count"
+  },
+  {
+   "default": "0",
+   "fieldname": "contact_not_found",
+   "fieldtype": "Check",
+   "hidden": 1,
+   "label": "Contact Not Found"
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-11-25 03:41:43.862007",
+ "modified": "2025-05-19 14:49:35.467827",
  "modified_by": "Administrator",
  "module": "WhatsApp ERPNext",
  "name": "WhatsApp Message",

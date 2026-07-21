@@ -1,4 +1,4 @@
-frappe.ui.form.on('Delivery Note', {
+frappe.ui.form.on('Issue', {
     onload: function(frm){
         let fields = [
 			{

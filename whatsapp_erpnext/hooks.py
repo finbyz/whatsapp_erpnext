@@ -36,6 +36,7 @@ doctype_js = {
     "Quotation" : "public/js/quotation.js",
     "Purchase Order" : "public/js/purchase_order.js",
     "Delivery Note" : "public/js/delivery_note.js",
+    "Issue": "public/js/issue.js",
     "Notification" : "public/js/notificaton.js",
     }
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -118,9 +119,9 @@ doctype_js = {
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-#	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Notification": "whatsapp_erpnext.override.notification.Notification"
+}
 
 # Document Events
 # ---------------
@@ -152,23 +153,13 @@ doc_events = {
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-#	"all": [
-#		"whatsapp_erpnext.tasks.all"
-#	],
-#	"daily": [
-#		"whatsapp_erpnext.tasks.daily"
-#	],
-#	"hourly": [
-#		"whatsapp_erpnext.tasks.hourly"
-#	],
-#	"weekly": [
-#		"whatsapp_erpnext.tasks.weekly"
-#	],
-#	"monthly": [
-#		"whatsapp_erpnext.tasks.monthly"
-#	],
-# }
+scheduler_events = {
+    "all": [
+        "whatsapp_erpnext.schedule.schedule_whatsapp_comments",
+        "whatsapp_erpnext.schedule.bg_message_contact_generation",
+        "whatsapp_erpnext.schedule.retry_failed_whatsapp_messages",
+    ],
+}
 
 # Testing
 # -------

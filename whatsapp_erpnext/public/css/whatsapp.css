@@ -1,0 +1,247 @@
+.whatsapp-container {
+    display: flex;
+    height: calc(100vh - 100px);
+    background: #f0f2f5;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.whatsapp-sidebar {
+    width: 30%;
+    background: #fff;
+    border-right: 1px solid #e0e0e0;
+    display: flex;
+    flex-direction: column;
+}
+
+.whatsapp-header {
+    padding: 16px;
+    background: #f0f2f5;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.chat-search-wrapper {
+    margin-top: 10px;
+}
+
+.chat-search-wrapper input#chat-search {
+    width: 100%;
+    padding: 7px 12px;
+    border: none;
+    border-radius: 20px;
+    background: #fff;
+    font-size: 14px;
+    color: #111b21;
+    outline: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    box-sizing: border-box;
+}
+
+.chat-search-wrapper input#chat-search::placeholder {
+    color: #aaa;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-info h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.chat-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.chat-item {
+    display: flex;
+    padding: 12px 16px;
+    gap: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.chat-item:hover {
+    background-color: #f5f5f5;
+}
+
+.chat-item.active {
+    background-color: #e9ebeb;
+}
+
+.chat-info {
+    flex: 1;
+}
+
+.chat-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    color: #333;
+}
+
+.chat-info p {
+    margin: 0;
+    font-size: 13px;
+    color: #667781;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.whatsapp-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #efeae2;
+}
+
+.chat-header {
+    padding: 12px 16px;
+    background: #f0f2f5;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.contact-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.contact-details h3 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message {
+    max-width: 65%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.message.sent {
+    align-self: flex-end;
+    background-color: #d9fdd3;
+}
+
+.message.received {
+    align-self: flex-start;
+    background-color: #fff;
+}
+
+.message-content {
+    font-size: 14px;
+    color: #111b21;
+    margin-bottom: 4px;
+}
+
+.message-time {
+    font-size: 11px;
+    color: #667781;
+    text-align: right;
+}
+
+.chat-input {
+    padding: 16px;
+    background: #f0f2f5;
+    border-top: 1px solid #e0e0e0;
+}
+
+.input-container {
+    display: flex;
+    gap: 8px;
+    background: #fff;
+    padding: 8px 12px;
+    border-radius: 24px;
+}
+
+#message-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    color: #111b21;
+    background: transparent;
+}
+
+#send-button {
+    background: none;
+    border: none;
+    color: #54656f;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+
+#send-button:hover {
+    color: #00a884;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cccccc;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #999999;
+}
+
+.tick {
+    font-size: 14px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+.tick.single { color: #888; }
+.tick.double { color: #888; }
+.tick.blue { color: #34b7f1; }
+.tick.failed { color: #e53935; }
+.chat-image {
+    border-radius: 8px;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    display: block;
+    max-width: 200px;
+    max-height: 200px;
+} 
+
+.no-messages {
+    text-align: center;
+    color: #667781;
+    font-size: 13px;
+    margin-top: 40px;
+}

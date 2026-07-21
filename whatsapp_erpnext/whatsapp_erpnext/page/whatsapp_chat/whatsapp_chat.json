@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2025-05-19 16:15:29.698407",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2025-05-19 16:15:29.698407",
+ "modified_by": "Administrator",
+ "module": "WhatsApp ERPNext",
+ "name": "whatsapp-chat",
+ "owner": "Administrator",
+ "page_name": "whatsapp-chat",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Whatsapp Chat"
+}

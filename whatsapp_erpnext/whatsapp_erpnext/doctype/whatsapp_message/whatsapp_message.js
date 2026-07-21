@@ -9,5 +9,22 @@ frappe.ui.form.on('WhatsApp Message', {
 
 			});
 		}
+		if (frm.doc.status == "Failed"){
+			frm.add_custom_button(__("Retry"), function(){
+				frappe.call({
+					method: "whatsapp_erpnext.whatsapp_erpnext.doc_events.notification.retry_message",
+					args: {
+						whatsapp_msg_id: frm.doc.name
+					},
+					
+					callback: function(r){
+						if (r.message){
+							frappe.msgprint(r.message);
+							frm.reload_doc();
+						}
+					}
+				});
+			});
+		}
 	}
 });

@@ -100,6 +100,7 @@
    "fieldname": "id",
    "fieldtype": "Data",
    "label": "ID",
+   "no_copy": 1,
    "read_only": 1
   },
   {
@@ -117,7 +118,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-11-24 02:18:57.295574",
+ "modified": "2024-10-01 18:03:21.549219",
  "modified_by": "Administrator",
  "module": "WhatsApp ERPNext",
  "name": "WhatsApp Templates",
