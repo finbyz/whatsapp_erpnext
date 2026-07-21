@@ -206,15 +206,19 @@ def fetch():
 				# update template text
 				elif component['type'] == 'BODY':
 					doc.template = component.get('text', '')
-					if component.get('example'):
-						doc.sample_values = ','.join(component['example']['body_text'][0])
+					example = component.get('example')
+					if example:
+						if 'body_text' in example:
+							doc.sample_values = ','.join(example['body_text'][0])
+						elif 'body_text_named_params' in example:
+							doc.sample_values = ','.join(
+								p.get('example', '') for p in example['body_text_named_params']
+							)
+
+				# buttons don't carry body_text/example data - just store the label text
 				elif component['type'] == 'BUTTONS':
 					doc.buttons = component.get('text', '')
-					if component.get('example'):
-						doc.sample_values = ','.join(component['example']['body_text'][0])
-					elif 'body_text_named_params' in example:
-						doc.sample_values = ','.join(p.get('example', '') for p in example['body_text_named_params'])
-				
+
 			# if document exists update else insert
 			# used db_update and db_insert to ignore hooks
 			if flags:
@@ -237,7 +241,7 @@ def fetch():
 					)
 			except (ValueError, KeyError, AttributeError):
 				pass
-		
+
 		# If we couldn't get a proper error message from the response, throw the original exception
 		frappe.throw(
 			msg=str(e),
