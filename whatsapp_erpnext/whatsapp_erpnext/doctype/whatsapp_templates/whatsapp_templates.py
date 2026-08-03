@@ -225,7 +225,6 @@ def fetch():
 				doc.db_update()
 			else:
 				doc.db_insert()
-			frappe.db.commit()
 
 	except Exception as e:
 		# Check if integration_request has a response and if it contains error info
