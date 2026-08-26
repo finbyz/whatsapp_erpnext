@@ -252,25 +252,49 @@ error_codes = {
     135000: "Message failed to send because of an unknown error with your request parameters."
 }
 
-def update_message_status(data, ):
+def update_message_status(data, retry_count=0):
 	"""Update message status."""
-	id = data['statuses'][0]['id']
-	status = data['statuses'][0]['status']
-	conversation = data['statuses'][0].get('conversation', {}).get('id')
-	name = frappe.db.get_value("WhatsApp Message", filters={"message_id": id})
+	for status_data in data.get("statuses", []):
+		message_id = status_data.get("id")
+		status = status_data.get("status")
+		if not message_id or not status:
+			continue
 
-	doc = frappe.get_doc("WhatsApp Message", name)
-	if doc.type != "Incoming":
-		doc.status = status.title()
-	if conversation:
-		doc.conversation_id = conversation
-	if status == "failed":
-		doc.error_field = str(data)
-	error_details = ""
-	if 'statuses' in data and len(data['statuses']) > 0 and data['statuses'][0]['status'] == 'failed':
-		errors = data['statuses'][0]['errors']
-		for error in errors:
-			reason = error_codes.get(error['code'], "Unknown error")
-			error_details += f"{reason}\n"
-		doc.rejection_remarks = error_details
-	doc.save(ignore_permissions=True)
+		name = frappe.db.get_value(
+			"WhatsApp Message", filters={"message_id": message_id}
+		)
+		if not name:
+			# A callback may reach Frappe before the transaction which sent and
+			# logged the message has committed. Retry after this webhook commits.
+			if retry_count < 3:
+				frappe.enqueue(
+					"whatsapp_erpnext.utils.webhook.update_message_status",
+					queue="short",
+					enqueue_after_commit=True,
+					data={"statuses": [status_data]},
+					retry_count=retry_count + 1,
+				)
+			else:
+				frappe.log_error(
+					message=f"No WhatsApp Message found for message_id {message_id}",
+					title="WhatsApp Status Update Failed",
+				)
+			continue
+
+		doc = frappe.get_doc("WhatsApp Message", name)
+		if doc.type != "Incoming":
+			doc.status = status.title()
+
+		conversation = status_data.get("conversation", {}).get("id")
+		if conversation:
+			doc.conversation_id = conversation
+
+		if status == "failed":
+			doc.error_field = str(data)
+			error_details = []
+			for error in status_data.get("errors", []):
+				reason = error_codes.get(error.get("code"), "Unknown error")
+				error_details.append(reason)
+			doc.rejection_remarks = "\n".join(error_details)
+
+		doc.save(ignore_permissions=True)

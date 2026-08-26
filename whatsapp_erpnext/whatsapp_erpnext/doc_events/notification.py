@@ -158,6 +158,10 @@ def send_template_message(self, doc: Document, contact_no=None):
                     # Pass parameter values
                     if self.fields:
                         parameters = []
+                        template_text = template.get("template") or ""
+                        uses_named_parameters = bool(
+                            re.search(r"\{\{\s*[A-Za-z_][A-Za-z0-9_]*\s*\}\}", template_text)
+                        )
                         for field in self.fields:
                             # Get the raw value first, then format if needed
                             field_value = doc.get(field.field_name)
@@ -168,16 +172,15 @@ def send_template_message(self, doc: Document, contact_no=None):
                             else:
                                 field_value = ""
                             
-                            parameters.append({
+                            parameter = {
                                 "type": "text",
-                                # Meta requires `parameter_name` for templates using
-                                # named variables (e.g. {{customer_name}}) instead of
-                                # positional ones (e.g. {{1}}). We use a custom field
-                                # `parameter_name` on the row if present, else fall
-                                # back to the doc's field_name.
-                                "parameter_name": getattr(field, "parameter_name", None) or field.field_name,
                                 "text": field_value
-                            })
+                            }
+                            if uses_named_parameters:
+                                parameter["parameter_name"] = (
+                                    getattr(field, "parameter_name", None) or field.field_name
+                                )
+                            parameters.append(parameter)
 
                         data['template']["components"] = [{
                             "type": "body",
@@ -359,7 +362,10 @@ def notify(self, data, label=None):
             message_id = response["messages"][0]["id"]
             data["error_field"] = str(response)  # Save the response
             
-            enqueue(save_whatsapp_log, self=self, data=data, message_id=message_id, label=label)
+            # Store the message before returning from the send operation. Status
+            # webhooks can arrive almost immediately and previously raced the
+            # background job that created this record.
+            save_whatsapp_log(self, data, message_id, label=label)
             frappe.msgprint("WhatsApp Message Triggered", indicator="green", alert=False)
         else:
             # Handle error response
@@ -485,6 +491,7 @@ def save_whatsapp_log(self, data, message_id, label=None,retry=False):
         "document_name": data.get("document_name"),
         "doctype_link_name": data.get("doctype_link_name"),
         "error_field": data.get("error_field"),
+        "status": "Sent",
         "notification": notification,
         "retry_count": 5 if retry else 1,
     })
