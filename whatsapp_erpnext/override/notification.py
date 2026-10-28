@@ -9,10 +9,9 @@ from frappe.utils import nowdate,add_days, add_months, add_years
 from frappe.utils.safe_exec import get_safe_globals
 from frappe.desk.form import assign_to
 from jinja2 import Template
-try:
-	from productivity_next.productivity_next.override_doctype_class.notification import Notification as _Notification
-except ImportError:
-	from frappe.email.doctype.notification.notification import Notification as _Notification
+# productivity_next v16 extends Notification via extend_doctype_class (a mixin), so the
+# override must subclass frappe's Notification directly; frappe stacks the mixin on top.
+from frappe.email.doctype.notification.notification import Notification as _Notification
 from frappe.email.doctype.notification.notification import get_context
 from whatsapp_erpnext.whatsapp_erpnext.doc_events.notification import send_template_message
 
