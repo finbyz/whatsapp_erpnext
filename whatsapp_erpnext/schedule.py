@@ -98,7 +98,7 @@ def bg_message_contact_generation():
                                 ON dl.parent = c.name 
                             WHERE 
                                 LENGTH(cp.phone) >= 10
-                                AND cp.phone = '{contact}'
+                                AND cp.phone = %(phone)s
                             ORDER BY 
                             CASE dl.link_doctype
                                 WHEN 'Customer' THEN 1
@@ -108,7 +108,7 @@ def bg_message_contact_generation():
                             c.modified DESC
                         LIMIT 1;
                     """
-        contact_details = frappe.db.sql(contact_query, as_dict=True)
+        contact_details = frappe.db.sql(contact_query, {"phone": contact}, as_dict=True)
         whatsapp_message = frappe.get_doc("WhatsApp Message", msg.get("name"))
         if not contact_details:
             whatsapp_message.contact_not_found = 1

@@ -92,6 +92,7 @@ def get_chats():
 	  - Incoming: contact is in `from`
 	  - Outgoing: contact is in `to`
 	"""
+	frappe.has_permission("WhatsApp Message", "read", throw=True)
 	chats = frappe.db.sql("""
 		SELECT
 			CASE
@@ -141,6 +142,7 @@ def get_chats():
 @frappe.whitelist()
 def get_messages(contact_number, party_type=None, party=None):
 	"""Fetch all messages for a conversation with a given contact number (either direction)."""
+	frappe.has_permission("WhatsApp Message", "read", throw=True)
 	party_filter = ""
 	args = [contact_number, contact_number]
 	if party_type and party:

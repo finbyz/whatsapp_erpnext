@@ -1,4 +1,7 @@
 """Webhook."""
+import hashlib
+import hmac
+
 import frappe
 import json
 import requests
@@ -16,7 +19,22 @@ def webhook():
 	"""Meta webhook."""
 	if frappe.request.method == "GET":
 		return get()
+	_verify_meta_signature()
 	return post()
+
+
+def _verify_meta_signature():
+	"""Reject POSTs not signed by Meta once the App Secret is configured.
+
+	Meta signs every webhook body with the app secret (X-Hub-Signature-256). Set
+	`whatsapp_app_secret` in site_config.json to enforce it.
+	"""
+	secret = frappe.conf.get("whatsapp_app_secret")
+	if not secret:
+		return
+	expected = "sha256=" + hmac.new(secret.encode(), frappe.request.get_data(), hashlib.sha256).hexdigest()
+	if not hmac.compare_digest(expected, frappe.get_request_header("X-Hub-Signature-256") or ""):
+		frappe.throw("Invalid webhook signature", frappe.PermissionError)
 
 
 def get():
@@ -72,7 +90,7 @@ def post():
                         ON dl.parent = c.name 
                     WHERE 
                         LENGTH(cp.phone) >= 10
-                        AND (cp.phone = '{contact_no}' OR cp.phone LIKE '%{short_contact_no}')
+                        AND (cp.phone = %(phone)s OR cp.phone LIKE %(phone_suffix)s)
                     ORDER BY 
                         CASE dl.link_doctype
                             WHEN 'Customer' THEN 1
@@ -83,7 +101,7 @@ def post():
                     LIMIT 1;
 				"""
 
-			contact_details = frappe.db.sql(contact_query, as_dict=True)
+			contact_details = frappe.db.sql(contact_query, {"phone": contact_no, "phone_suffix": f"%{short_contact_no}"}, as_dict=True)
 
 			link_to = ""
 			link_name = ""

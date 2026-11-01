@@ -113,7 +113,7 @@ def send_template_message(self, doc: Document, contact_no=None):
                             ON dl.parent = c.name 
                         WHERE 
                             LENGTH(cp.phone) >= 10
-                            AND cp.phone = '{mobile_number}'
+                            AND cp.phone = %(phone)s
                         ORDER BY 
 						CASE dl.link_doctype
 							WHEN 'Customer' THEN 1
@@ -124,7 +124,7 @@ def send_template_message(self, doc: Document, contact_no=None):
 					LIMIT 1;
 				"""
 
-                    contact_details = frappe.db.sql(contact_query, as_dict=True)
+                    contact_details = frappe.db.sql(contact_query, {"phone": mobile_number}, as_dict=True)
                     error_field = ""
 
                     link_to = ""
@@ -414,6 +414,10 @@ def format_number(self, number):
 def send_notification(notification, ref_doctype, ref_docname, mobile_no=None):
     noti_doc = frappe.get_doc("Notification", notification)
     ref_doc = frappe.get_doc(ref_doctype, ref_docname)
+    # The sender must be able to see the document, and only its own notifications may be sent
+    ref_doc.check_permission("read")
+    if noti_doc.document_type != ref_doctype:
+        frappe.throw(f"Notification {notification} is not set up for {ref_doctype}", frappe.PermissionError)
 
     send_template_message(noti_doc, ref_doc, mobile_no)
 
@@ -500,6 +504,7 @@ def save_whatsapp_log(self, data, message_id, label=None,retry=False):
 @frappe.whitelist()
 def retry_message(whatsapp_msg_id):
     """Retry sending a WhatsApp message based on message ID."""
+    frappe.has_permission("WhatsApp Message", "write", whatsapp_msg_id, throw=True)
     settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
     
     whatsapp_msg = frappe.get_doc("WhatsApp Message", whatsapp_msg_id)

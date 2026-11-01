@@ -154,6 +154,7 @@ class WhatsAppTemplates(Document):
 @frappe.whitelist()
 def fetch():
 	"""Fetch templates from meta."""
+	frappe.has_permission("WhatsApp Templates", "create", throw=True)
 
 	# get credentials
 	settings = frappe.get_doc("WhatsApp Settings", "WhatsApp Settings")
