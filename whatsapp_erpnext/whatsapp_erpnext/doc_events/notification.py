@@ -9,7 +9,13 @@ from frappe.utils.background_jobs import enqueue
 from datetime import datetime
 from frappe.utils import now_datetime
 
+def clear_notification_map():
+    # After commit, so a request running meanwhile cannot cache the old list again
+    frappe.db.after_commit.add(lambda: frappe.cache().delete_value("whatsapp_notification_map"))
+
+
 def validate(self, method):
+    clear_notification_map()
     if self.channel == "WhatsApp":
         fields = frappe.get_doc("DocType", self.document_type).fields
         fields += frappe.get_all(
@@ -20,7 +26,7 @@ def validate(self, method):
 
 
 def on_trash(self, method):
-    pass
+    clear_notification_map()
     # if self.channel == "WhatsApp":
     # 	if self.notification_type == "Scheduler Event":
     # 		frappe.delete_doc("Scheduled Job Type", self.name)

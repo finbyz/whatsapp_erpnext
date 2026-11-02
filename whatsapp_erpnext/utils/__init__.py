@@ -35,6 +35,12 @@ def get_notifications_map():
     if frappe.flags.in_patch and not frappe.db.table_exists("Notification"):
         return {}
 
+    # Called on every event of every document, so keep the map in cache. It is cleared when a
+    # Notification is saved or deleted (doc_events/notification.py) and expires hourly anyway.
+    notification_map = frappe.cache().get_value("whatsapp_notification_map")
+    if notification_map is not None:
+        return notification_map
+
     notification_map = {}
     enabled_whatsapp_notifications = frappe.get_all(
         "Notification",
@@ -51,6 +57,6 @@ def get_notifications_map():
             notification.event, []
         ).append(notification.name)
 
-    frappe.cache().set_value("whatsapp_notification_map", notification_map)
+    frappe.cache().set_value("whatsapp_notification_map", notification_map, expires_in_sec=3600)
 
     return notification_map
